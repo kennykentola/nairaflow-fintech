@@ -1,0 +1,7 @@
+{
+  "name": "Copy of NairaFlow Fintech",
+  "description": "A comprehensive Nigerian Fintech dashboard simulation featuring loan management, wallet operations, AI-powered credit scoring, and KYC verification flows. Mimics a full-stack production environment with mock banking logic.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
