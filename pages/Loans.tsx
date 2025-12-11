@@ -5,7 +5,7 @@ import { analyzeLoanRisk } from '../services/geminiService';
 import { MockAPI } from '../services/mockBackend';
 import { Loan, LoanStatus, KYCLevel } from '../types';
 import { formatCurrency, LOAN_PURPOSES } from '../constants';
-import { Calculator, AlertTriangle, CheckCircle, Loader2, CreditCard, Lock, ArrowLeft, History, PieChart, Info, Shield } from 'lucide-react';
+import { Calculator, AlertTriangle, CheckCircle, Loader2, CreditCard, Lock, ArrowLeft, History, PieChart, Info, Shield, Calendar, DollarSign, Briefcase, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Loans = () => {
@@ -23,6 +23,9 @@ const Loans = () => {
   const [aiResult, setAiResult] = useState<any>(null);
   const [viewState, setViewState] = useState<'LIST' | 'CALCULATOR' | 'APPLY'>('LIST');
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  // Modal State
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     loadLoans();
@@ -55,7 +58,16 @@ const Loans = () => {
   const totalRepayment = monthlyRepayment * duration;
   const totalInterest = totalRepayment - amount;
 
+  const initiateAnalysis = () => {
+      if (income <= 0) {
+          alert("Please enter a valid monthly income.");
+          return;
+      }
+      setShowConfirmModal(true);
+  };
+
   const handleAnalyze = async () => {
+    setShowConfirmModal(false);
     setIsAnalyzing(true);
     try {
       const result = await analyzeLoanRisk(amount, duration, income, employment, purpose);
@@ -117,7 +129,7 @@ const Loans = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             {viewState === 'LIST' ? <History className="text-primary"/> : <Calculator className="text-primary"/>}
@@ -399,7 +411,7 @@ const Loans = () => {
             </div>
 
             <button 
-                onClick={handleAnalyze}
+                onClick={initiateAnalysis}
                 disabled={isAnalyzing}
                 className="w-full py-4 bg-secondary text-white rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-gray-900 transition-colors shadow-lg"
             >
@@ -453,6 +465,87 @@ const Loans = () => {
                 </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        <CheckCircle className="text-primary" /> Confirm Details
+                    </h3>
+                    <button onClick={() => setShowConfirmModal(false)} className="text-gray-400 hover:text-gray-600">
+                        <X size={20} />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <p className="text-xs text-blue-500 uppercase font-bold tracking-wider mb-2">Loan Summary</p>
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-gray-600">Principal Amount</span>
+                            <span className="font-bold text-gray-800">{formatCurrency(amount)}</span>
+                        </div>
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-gray-600">Duration</span>
+                            <span className="font-bold text-gray-800">{duration} Months</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                             <span className="text-gray-600">Purpose</span>
+                             <span className="font-bold text-gray-800">{purpose}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-2">Repayment Schedule</p>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="bg-white p-2 rounded shadow-sm text-primary"><Calendar size={20}/></div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Monthly Payment</p>
+                                    <p className="font-bold text-gray-800">{formatCurrency(monthlyRepayment)}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="bg-white p-2 rounded shadow-sm text-accent"><DollarSign size={20}/></div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Total Interest</p>
+                                    <p className="font-bold text-gray-800">{formatCurrency(totalInterest)}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="bg-white p-2 rounded shadow-sm text-emerald-600"><Briefcase size={20}/></div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Declared Income</p>
+                                    <p className="font-bold text-gray-800">{formatCurrency(income)}/mo</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                        <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <p>By proceeding, you consent to an AI-powered credit assessment based on your wallet history and declared income.</p>
+                    </div>
+                </div>
+
+                <div className="p-6 pt-0 flex gap-3">
+                    <button 
+                        onClick={() => setShowConfirmModal(false)}
+                        className="flex-1 py-3 text-gray-600 font-bold hover:bg-gray-50 rounded-xl transition-colors"
+                    >
+                        Edit
+                    </button>
+                    <button 
+                        onClick={handleAnalyze}
+                        className="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-emerald-700 shadow-md transition-colors"
+                    >
+                        Confirm & Analyze
+                    </button>
+                </div>
+            </div>
         </div>
       )}
     </div>
